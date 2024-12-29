@@ -1,0 +1,60 @@
+# Use postgres/example user/password credentials
+volumes:
+  postgres_vol_1:
+  clickhouse_vol_1:
+
+services:
+  db_clickhouse:
+    container_name: clickhouse
+    image: clickhouse
+    restart: always
+    volumes:
+      - clickhouse_vol_1:/var/lib/clickhouse/
+    environment:
+      - 'CLICKHOUSE_DB=my_database'
+      - 'CLICKHOUSE_USER=username'
+      - 'CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1'
+      - 'CLICKHOUSE_PASSWORD=password'
+    networks:
+      - app_net
+
+
+
+
+  db_postgres:
+    container_name: postgres
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    # or set shared memory limit when deploy via swarm stack
+    volumes:
+      - postgres_vol_1:/var/lib/postgresql/data
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      - 'POSTGRES_PASSWORD=pos_admin'
+      - 'POSTGRES_USER=pos_admin'
+      - 'POSTGRES_DB=test_app'
+    networks:
+      - app_net
+
+  superset:
+    container_name: superset
+    image: apache/superset
+    restart: always
+    ports:
+      - '8088:8088'
+    volumes:
+      - './superset_config.py:/app/pythonpath/superset_config.py'
+      #command: >
+      #bash -c "apt-get update && apt-get install -y gcc libpq-dev && pip install psycopg2-binary && /entrypoint.sh"
+    networks: 
+      - app_net
+
+networks:
+  app_net:
+    external: true
+
+
